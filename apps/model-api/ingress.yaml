@@ -3,7 +3,14 @@ kind: Ingress
 metadata:
   name: model-api
   namespace: dev
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - model-api.durczok.ovh
+      secretName: model-api-tls
   rules:
     - host: model-api.durczok.ovh
       http:

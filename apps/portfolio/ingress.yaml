@@ -14,8 +14,14 @@ kind: Ingress
 metadata:
   name: portfolio
   namespace: dev
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - portfolio.durczok.ovh
+      secretName: portfolio-tls
   rules:
     - host: portfolio.durczok.ovh
       http:
@@ -34,9 +40,14 @@ metadata:
   name: portfolio-apex-redirect
   namespace: dev
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: dev-apex-to-portfolio-redirect@kubernetescrd
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - durczok.ovh
+      secretName: durczok-apex-tls
   rules:
     - host: durczok.ovh
       http:
