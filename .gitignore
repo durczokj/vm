@@ -4,3 +4,4 @@ credentials.txt
 kubeconfig*
 .kube/
 .DS_Store
+notebooks/

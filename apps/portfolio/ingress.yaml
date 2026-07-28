@@ -1,0 +1,50 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: apex-to-portfolio-redirect
+  namespace: dev
+spec:
+  redirectRegex:
+    regex: ^https?://durczok\.ovh/.*
+    replacement: https://portfolio.durczok.ovh/
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portfolio
+  namespace: dev
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: portfolio.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: portfolio
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portfolio-apex-redirect
+  namespace: dev
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: dev-apex-to-portfolio-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: portfolio
+                port:
+                  number: 80
