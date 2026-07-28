@@ -1,0 +1,6 @@
+credentials.txt
+*.pem
+*.key
+kubeconfig*
+.kube/
+.DS_Store

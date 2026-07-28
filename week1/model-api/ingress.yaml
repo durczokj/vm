@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: model-api
+  namespace: dev
+spec:
+  rules:
+    - host: model-api.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: model-api
+                port:
+                  number: 80

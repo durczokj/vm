@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-api
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: model-api
+  template:
+    metadata:
+      labels:
+        app: model-api
+    spec:
+      containers:
+        - name: model-api
+          image: durczokj/iris-model-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
