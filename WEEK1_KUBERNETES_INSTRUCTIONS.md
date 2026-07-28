@@ -428,16 +428,41 @@ If anything shows up, remove it, add to `.gitignore`, `git rm --cached <file>`, 
 
 ### 2. Adapt the model-api repo to the new framework
 
-The model-api repo (`/Users/jakubdurczok/Documents/GitHub/model-api`) should now assume it will be run on Kubernetes, not on the VM directly.
+We use **Option A: the model-api repo owns its deployment**.
+
+- The vm repo owns the **shared platform** objects that rarely change:
+  `week1/namespace.yaml`, `week1/model-api/service.yaml`, `week1/model-api/ingress.yaml`.
+- The model-api repo owns the **Deployment** manifest and the deploy pipeline:
+  `deploy/k8s/deployment.yaml` + `.github/workflows/deploy.yaml`.
+- A GitHub Release in the model-api repo is the single trigger that produces a new image and rolls it out to the cluster.
+
+This split means there is **one owner per Kubernetes object**, so there is no drift.
 
 Steps:
 
-1. **Add a versioned image tag and stop using `:latest`.**
-   Update the Dockerfile / CI so images are pushed as `durczokj/iris-model-api:vX.Y.Z`.
-   Rule of thumb: `:latest` is fine for local dev, never for cluster deploys.
+1. **Confirm the split of files.**
 
-2. **Keep the `/health` route committed.**
-   Confirm `src/app.py` in the model-api repo has:
+   vm repo (this repo):
+
+   ```
+   week1/
+     namespace.yaml
+     model-api/
+       service.yaml
+       ingress.yaml
+   ```
+
+   model-api repo:
+
+   ```
+   deploy/
+     k8s/
+       deployment.yaml       # image tag is a placeholder, rewritten in CI
+   .github/workflows/
+     deploy.yaml             # release-triggered build + apply
+   ```
+
+2. **Keep the `/health` route committed** in `src/app.py`:
 
    ```python
    @app.route("/health")
@@ -445,31 +470,46 @@ Steps:
        return {"status": "ok"}, 200
    ```
 
-   Commit and push in the model-api repo.
+3. **The Deployment manifest uses a placeholder tag.**
 
-3. **Move k8s manifests closer to the app (optional but recommended).**
-   Two valid patterns:
-   - Keep manifests in the vm repo (current setup). Good for a mono-infra repo.
-   - Add a `deploy/k8s/` folder inside model-api with the same 3 YAMLs. Good for app-owned deploy.
-
-   For Week 1, keep them in the vm repo. Revisit in Week 3 when we introduce Helm/Kustomize.
-
-4. **Pin the image tag in the deployment manifest.**
-   In `week1/model-api/deployment.yaml`, change `image: durczokj/iris-model-api:latest` to the versioned tag you just pushed:
+   `deploy/k8s/deployment.yaml` in the model-api repo has:
 
    ```yaml
-   image: durczokj/iris-model-api:v0.1.0
+   image: durczokj/iris-model-api:__IMAGE_TAG__
    ```
 
-   Apply and verify a clean rollout:
+   CI rewrites `__IMAGE_TAG__` to the release tag (e.g. `v0.1.0`) before applying it.
+
+4. **Release flow (what you actually do).**
 
    ```bash
-   kubectl apply -f week1/model-api/deployment.yaml
-   kubectl -n dev rollout status deployment/model-api
+   cd /Users/jakubdurczok/Documents/GitHub/model-api
+   git tag v0.1.0
+   git push origin v0.1.0
+   gh release create v0.1.0 --title "v0.1.0" --notes "…"
    ```
 
-5. **Document the deploy flow in the model-api README.**
-   Short section: how to build, push, bump tag, and rollout. Future-you and interviewers will thank you.
+   The workflow then:
+   1. builds `durczokj/iris-model-api:v0.1.0` and pushes to Docker Hub,
+   2. renders `deploy/k8s/deployment.yaml` with the tag,
+   3. copies the rendered file to the VM,
+   4. runs `kubectl apply -f` and waits for `rollout status`.
+
+5. **Bootstrap-only step (once).**
+
+   The vm repo still creates the namespace, service, and ingress:
+
+   ```bash
+   kubectl apply -f week1/namespace.yaml
+   kubectl apply -f week1/model-api/service.yaml
+   kubectl apply -f week1/model-api/ingress.yaml
+   ```
+
+   The first release then creates the Deployment. Subsequent releases update it.
+
+6. **Never `kubectl apply` a Deployment manifest from the vm repo again.**
+
+   Since the Deployment lives only in model-api, the vm repo can't accidentally overwrite the running image.
 
 ### 3. Decommission the old deployment (durczok.ovh/model_api)
 
@@ -569,9 +609,10 @@ free -h
 
 - [ ] vm repo committed and pushed to GitHub
 - [ ] `.gitignore` prevents committing vps.txt / kubeconfig / keys
-- [ ] model-api image built and pushed with a versioned tag (not `:latest`)
-- [ ] `week1/model-api/deployment.yaml` pins that versioned tag
-- [ ] rollout succeeded with the pinned tag
+- [ ] `deployment.yaml` removed from vm repo (owned by model-api repo now)
+- [ ] `deploy/k8s/deployment.yaml` exists in model-api repo with `__IMAGE_TAG__` placeholder
+- [ ] `.github/workflows/deploy.yaml` triggers on release, renders manifest, applies to k3s
+- [ ] first release (e.g. `v0.1.0`) built, pushed, and rolled out successfully
 - [ ] old docker compose / container for iris-model-api stopped
 - [ ] old nginx (or similar) route for `/model_api` removed
 - [ ] `curl http://model-api.durczok.ovh/health` still returns 200
