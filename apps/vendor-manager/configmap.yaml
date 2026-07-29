@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vendor-manager-config
+  namespace: dev
+data:
+  DJANGO_DEBUG: "0"
+  DJANGO_ALLOWED_HOSTS: "vendor-manager.durczok.ovh"
+  CSRF_TRUSTED_ORIGINS: "https://vendor-manager.durczok.ovh"
+  DATABASE_ENGINE: "django.db.backends.postgresql_psycopg2"
+  DATABASE_HOST: "vendor-manager-db"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "vendor_manager"
+  DATABASE_USERNAME: "vendor_manager"
