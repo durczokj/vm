@@ -1,0 +1,53 @@
+name: Apply platform manifests
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "apply or diff"
+        required: true
+        default: "diff"
+        type: choice
+        options: [diff, apply]
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package manifests
+        run: |
+          set -euo pipefail
+          tar czf platform.tgz platform apps
+          ls -la platform.tgz
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "platform.tgz"
+          target: "/tmp/vm-${{ github.sha }}"
+
+      - name: Apply on VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            DIR=/tmp/vm-${{ github.sha }}
+            cd "$DIR" && tar xzf platform.tgz
+            MODE="${{ github.event_name == 'release' && 'apply' || inputs.mode }}"
+            echo "mode=$MODE"
+            if [ "$MODE" = "diff" ]; then
+              sudo k3s kubectl diff -f platform/ || true
+              sudo k3s kubectl diff -R -f apps/  || true
+            else
+              sudo k3s kubectl apply -f platform/
+              sudo k3s kubectl apply -R -f apps/
+            fi
