@@ -1,0 +1,69 @@
+name: Deploy to k3s
+description: >
+  Render an app's deployment manifest with a given image tag,
+  scp it to the k3s VM, apply it, and wait for the rollout.
+inputs:
+  app_name:
+    description: "Short name used for the scp target directory (e.g. chains)."
+    required: true
+  deployment_name:
+    description: "Kubernetes Deployment name for rollout status."
+    required: true
+  namespace:
+    description: "Namespace of the Deployment."
+    default: "dev"
+  manifest_path:
+    description: "Path to the deployment manifest in the caller repo. Must contain __IMAGE_TAG__."
+    default: "deploy/k8s/deployment.yaml"
+  image_tag:
+    description: "Image tag to substitute for __IMAGE_TAG__ in the manifest."
+    required: true
+  server_host:
+    description: "VM host (usually passed from secrets.SERVER_HOST)."
+    required: true
+  server_user:
+    description: "VM ssh user (usually passed from secrets.SERVER_USER)."
+    required: true
+  server_ssh_key:
+    description: "VM ssh private key (usually passed from secrets.SERVER_SSH_KEY)."
+    required: true
+  rollout_timeout:
+    description: "kubectl rollout status --timeout value."
+    default: "180s"
+
+runs:
+  using: composite
+  steps:
+    - name: Render deployment manifest
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p rendered
+        sed "s|__IMAGE_TAG__|${{ inputs.image_tag }}|g" \
+          "${{ inputs.manifest_path }}" > rendered/deployment.yaml
+        echo '--- rendered manifest ---'
+        cat rendered/deployment.yaml
+
+    - name: Copy rendered manifest to VM
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ inputs.server_host }}
+        username: ${{ inputs.server_user }}
+        key: ${{ inputs.server_ssh_key }}
+        source: "rendered/deployment.yaml"
+        target: "/tmp/${{ inputs.app_name }}"
+        strip_components: 1
+
+    - name: Apply manifest and wait for rollout
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ inputs.server_host }}
+        username: ${{ inputs.server_user }}
+        key: ${{ inputs.server_ssh_key }}
+        script: |
+          set -euo pipefail
+          sudo k3s kubectl apply -f /tmp/${{ inputs.app_name }}/deployment.yaml
+          sudo k3s kubectl -n ${{ inputs.namespace }} rollout status \
+            deployment/${{ inputs.deployment_name }} --timeout=${{ inputs.rollout_timeout }}
+          sudo k3s kubectl -n ${{ inputs.namespace }} get pods \
+            -l app=${{ inputs.deployment_name }} -o wide
