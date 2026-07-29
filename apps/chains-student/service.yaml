@@ -8,4 +8,4 @@ spec:
     app: chains-student
   ports:
     - port: 80
-      targetPort: 5050
+      targetPort: 80
