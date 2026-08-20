@@ -5,3 +5,6 @@ kubeconfig*
 .kube/
 .DS_Store
 notebooks/
+
+# Never commit any credentials* variant, including the sed .bak leftover.
+credentials.txt*

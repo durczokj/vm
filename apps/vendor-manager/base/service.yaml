@@ -2,10 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vendor-manager
-  namespace: dev
 spec:
   selector:
     app: vendor-manager
   ports:
     - port: 80
       targetPort: 8000
+      protocol: TCP
+  type: ClusterIP

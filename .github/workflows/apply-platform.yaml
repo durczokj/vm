@@ -1,5 +1,9 @@
 name: Apply platform manifests
 
+# Routing:
+#   release (prerelease=false) -> apply overlays/prod
+#   release (prerelease=true)  -> apply overlays/dev
+#   workflow_dispatch          -> user picks mode (diff|apply) and env (dev|prod|both)
 on:
   release:
     types: [published]
@@ -11,6 +15,12 @@ on:
         default: "diff"
         type: choice
         options: [diff, apply]
+      env:
+        description: "target environment"
+        required: true
+        default: "prod"
+        type: choice
+        options: [dev, prod, both]
 
 jobs:
   apply:
@@ -21,7 +31,7 @@ jobs:
       - name: Package manifests
         run: |
           set -euo pipefail
-          tar czf platform.tgz platform apps
+          tar czf platform.tgz platform apps overlays
           ls -la platform.tgz
 
       - uses: appleboy/scp-action@v0.1.7
@@ -38,16 +48,49 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: GH_EVENT_NAME,GH_IS_PRERELEASE,DISPATCH_MODE,DISPATCH_ENV
           script: |
             set -euo pipefail
             DIR=/tmp/vm-${{ github.sha }}
             cd "$DIR" && tar xzf platform.tgz
-            MODE="${{ github.event_name == 'release' && 'apply' || inputs.mode }}"
-            echo "mode=$MODE"
+
+            if [ "$GH_EVENT_NAME" = "release" ]; then
+              MODE="apply"
+              if [ "$GH_IS_PRERELEASE" = "true" ]; then
+                ENV="dev"
+              else
+                ENV="prod"
+              fi
+            else
+              MODE="$DISPATCH_MODE"
+              ENV="$DISPATCH_ENV"
+            fi
+            echo "mode=$MODE env=$ENV"
+
+            apply_or_diff() {
+              local overlay="$1"
+              if [ "$MODE" = "diff" ]; then
+                sudo k3s kubectl diff -k "$overlay" || true
+              else
+                sudo k3s kubectl apply -k "$overlay"
+              fi
+            }
+
+            # Platform (namespaces, cluster-issuer) is env-agnostic.
             if [ "$MODE" = "diff" ]; then
               sudo k3s kubectl diff -f platform/ || true
-              sudo k3s kubectl diff -R -f apps/  || true
             else
               sudo k3s kubectl apply -f platform/
-              sudo k3s kubectl apply -R -f apps/
             fi
+
+            case "$ENV" in
+              dev)  apply_or_diff overlays/dev ;;
+              prod) apply_or_diff overlays/prod ;;
+              both) apply_or_diff overlays/prod; apply_or_diff overlays/dev ;;
+              *) echo "unknown env: $ENV" >&2; exit 1 ;;
+            esac
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_IS_PRERELEASE: ${{ github.event.release.prerelease }}
+          DISPATCH_MODE: ${{ inputs.mode }}
+          DISPATCH_ENV: ${{ inputs.env }}

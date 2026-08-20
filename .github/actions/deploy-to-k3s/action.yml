@@ -39,7 +39,9 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p rendered
-        sed "s|__IMAGE_TAG__|${{ inputs.image_tag }}|g" \
+        # Strip any hard-coded 'namespace:' at metadata level; -n on apply owns it.
+        sed -e "s|__IMAGE_TAG__|${{ inputs.image_tag }}|g" \
+            -e '/^  namespace: /d' \
           "${{ inputs.manifest_path }}" > rendered/deployment.yaml
         echo '--- rendered manifest ---'
         cat rendered/deployment.yaml
@@ -62,7 +64,7 @@ runs:
         key: ${{ inputs.server_ssh_key }}
         script: |
           set -euo pipefail
-          sudo k3s kubectl apply -f /tmp/${{ inputs.app_name }}/deployment.yaml
+          sudo k3s kubectl -n ${{ inputs.namespace }} apply -f /tmp/${{ inputs.app_name }}/deployment.yaml
           sudo k3s kubectl -n ${{ inputs.namespace }} rollout status \
             deployment/${{ inputs.deployment_name }} --timeout=${{ inputs.rollout_timeout }}
           sudo k3s kubectl -n ${{ inputs.namespace }} get pods \

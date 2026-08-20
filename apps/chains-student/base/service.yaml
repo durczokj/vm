@@ -1,11 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: portfolio
-  namespace: dev
+  name: chains-student
 spec:
   selector:
-    app: portfolio
+    app: chains-student
   ports:
     - port: 80
       targetPort: 80
+      protocol: TCP
+  type: ClusterIP

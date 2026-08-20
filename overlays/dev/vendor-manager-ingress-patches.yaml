@@ -1,0 +1,9 @@
+- op: replace
+  path: /spec/rules/0/host
+  value: dev.vendor-manager.durczok.ovh
+- op: replace
+  path: /spec/tls/0/hosts/0
+  value: dev.vendor-manager.durczok.ovh
+- op: replace
+  path: /spec/tls/0/secretName
+  value: vendor-manager-tls-dev

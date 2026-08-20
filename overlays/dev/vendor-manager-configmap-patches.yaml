@@ -1,0 +1,9 @@
+# Include the prod hostname so kubelet's readiness/liveness probes (which hard-code
+# Host: vendor-manager.durczok.ovh in the Deployment) don't trigger Django's
+# DisallowedHost middleware. Real user traffic comes in on the dev hostname.
+- op: replace
+  path: /data/DJANGO_ALLOWED_HOSTS
+  value: dev.vendor-manager.durczok.ovh,vendor-manager.durczok.ovh
+- op: replace
+  path: /data/CSRF_TRUSTED_ORIGINS
+  value: https://dev.vendor-manager.durczok.ovh
