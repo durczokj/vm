@@ -1,23 +1,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: vendor-manager
-  namespace: dev
+  name: chains
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [vendor-manager.durczok.ovh]
-      secretName: vendor-manager-tls
+    - hosts: [chains.durczok.ovh]
+      secretName: chains-tls
   rules:
-    - host: vendor-manager.durczok.ovh
+    - host: chains.durczok.ovh
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: vendor-manager
+                name: chains
                 port:
                   number: 80

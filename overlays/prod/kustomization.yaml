@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod
+resources:
+  - ../../apps/model-api/base
+  - ../../apps/chains-student/base
+  - ../../apps/portfolio/base
+  - ../../apps/chains/base
+  - ../../apps/vendor-manager/base
+labels:
+  - includeSelectors: false
+    pairs:
+      env: prod

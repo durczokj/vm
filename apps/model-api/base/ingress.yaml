@@ -1,23 +1,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: chains-student
-  namespace: dev
+  name: model-api
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [chains-student.durczok.ovh]
-      secretName: chains-student-tls
+    - hosts: [model-api.durczok.ovh]
+      secretName: model-api-tls
   rules:
-    - host: chains-student.durczok.ovh
+    - host: model-api.durczok.ovh
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: chains-student
+                name: model-api
                 port:
                   number: 80
