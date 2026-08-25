@@ -1,9 +1,9 @@
 - op: replace
   path: /spec/rules/0/host
-  value: mcp-dev.durczok.ovh
+  value: dev.vendor-manager-mcp.durczok.ovh
 - op: replace
   path: /spec/tls/0/hosts/0
-  value: mcp-dev.durczok.ovh
+  value: dev.vendor-manager-mcp.durczok.ovh
 - op: replace
   path: /spec/tls/0/secretName
   value: vendor-manager-mcp-tls-dev

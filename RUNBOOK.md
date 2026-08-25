@@ -287,8 +287,8 @@ API. It runs alongside the main app and shares its release tag.
 
 | Overlay | Host                                | Backend Service (namespace)      |
 |---------|-------------------------------------|----------------------------------|
-| prod    | `vendor-manager-mcp.durczok.ovh`    | `vendor-manager-mcp` in `prod`   |
-| dev     | `mcp-dev.durczok.ovh`               | `vendor-manager-mcp` in `dev`    |
+| prod    | `vendor-manager-mcp.durczok.ovh`     | `vendor-manager-mcp` in `prod`   |
+| dev     | `dev.vendor-manager-mcp.durczok.ovh` | `vendor-manager-mcp` in `dev`    |
 
 **In-cluster API URL** (set via `VM_API_BASE_URL` in
 `apps/vendor-manager-mcp/base/configmap.yaml`):
@@ -303,7 +303,7 @@ outbound call. RBAC is enforced entirely inside vendor_manager
 (`accessible_to(user)` querysets).
 
 **DNS.** Add A records `vendor-manager-mcp.durczok.ovh` and
-`mcp-dev.durczok.ovh` → `51.83.199.73` in OVH, then follow the standard
+`dev.vendor-manager-mcp.durczok.ovh` → `51.83.199.73` in OVH, then follow the standard
 "adding a new hostname" flow above.
 
 **Traefik guardrails.** The ingress references
@@ -314,7 +314,7 @@ with:
 ```bash
 for i in $(seq 1 70); do
   curl -s -o /dev/null -w '%{http_code}\n' \
-    https://mcp-dev.durczok.ovh/healthz
+    https://dev.vendor-manager-mcp.durczok.ovh/healthz
 done | sort | uniq -c
 ```
 
