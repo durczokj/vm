@@ -4,7 +4,10 @@ metadata:
   name: vendor-manager-config
 data:
   DJANGO_DEBUG: "0"
-  DJANGO_ALLOWED_HOSTS: "vendor-manager.durczok.ovh"
+  # `.svc.cluster.local` is the Django subdomain-wildcard form; needed so the
+  # MCP sidecar (calls http://vendor-manager.<ns>.svc.cluster.local/api/v1/) is
+  # not rejected by DisallowedHost.
+  DJANGO_ALLOWED_HOSTS: "vendor-manager.durczok.ovh,.svc.cluster.local"
   CSRF_TRUSTED_ORIGINS: "https://vendor-manager.durczok.ovh"
   DATABASE_ENGINE: "django.db.backends.postgresql_psycopg2"
   DATABASE_HOST: "vendor-manager-db"

@@ -3,7 +3,7 @@
 # DisallowedHost middleware. Real user traffic comes in on the dev hostname.
 - op: replace
   path: /data/DJANGO_ALLOWED_HOSTS
-  value: dev.vendor-manager.durczok.ovh,vendor-manager.durczok.ovh
+  value: dev.vendor-manager.durczok.ovh,vendor-manager.durczok.ovh,.svc.cluster.local
 - op: replace
   path: /data/CSRF_TRUSTED_ORIGINS
   value: https://dev.vendor-manager.durczok.ovh
