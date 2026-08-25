@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vendor-manager-mcp-config
+data:
+  # In-cluster URL of the vendor_manager Django API (P11.T4).
+  VM_API_BASE_URL: "http://vendor-manager.prod.svc.cluster.local/api/v1"
+  LOG_LEVEL: "INFO"

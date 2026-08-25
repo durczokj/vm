@@ -275,3 +275,64 @@ Week 6.
 3. `kubectl -n kube-system rollout restart deployment coredns` (flush any negative cache).
 4. Create/patch the Ingress with the new host and a cert-manager annotation.
 5. Watch `kubectl -n <ns> get certificate` until Ready.
+
+---
+
+## 10. vendor_manager MCP server
+
+The MCP server (P11) is a thin FastMCP wrapper around the vendor_manager REST
+API. It runs alongside the main app and shares its release tag.
+
+**Hostnames**
+
+| Overlay | Host                                | Backend Service (namespace)      |
+|---------|-------------------------------------|----------------------------------|
+| prod    | `vendor-manager-mcp.durczok.ovh`    | `vendor-manager-mcp` in `prod`   |
+| dev     | `mcp-dev.durczok.ovh`               | `vendor-manager-mcp` in `dev`    |
+
+**In-cluster API URL** (set via `VM_API_BASE_URL` in
+`apps/vendor-manager-mcp/base/configmap.yaml`):
+
+* prod → `http://vendor-manager.prod.svc.cluster.local/api/v1`
+* dev  → `http://vendor-manager.dev.svc.cluster.local/api/v1`
+  (patched in `overlays/dev/vendor-manager-mcp-configmap-patches.yaml`)
+
+**Auth model.** The MCP server holds no credentials. It forwards the
+`Authorization: Basic …` header from the incoming MCP request to Django on every
+outbound call. RBAC is enforced entirely inside vendor_manager
+(`accessible_to(user)` querysets).
+
+**DNS.** Add A records `vendor-manager-mcp.durczok.ovh` and
+`mcp-dev.durczok.ovh` → `51.83.199.73` in OVH, then follow the standard
+"adding a new hostname" flow above.
+
+**Traefik guardrails.** The ingress references
+`vendor-manager-mcp-guardrails@kubernetescrd` — a Middleware **chain** that
+combines a 60 req/min rate-limit (burst 20) and a 1 MB request-body cap. Verify
+with:
+
+```bash
+for i in $(seq 1 70); do
+  curl -s -o /dev/null -w '%{http_code}\n' \
+    https://mcp-dev.durczok.ovh/healthz
+done | sort | uniq -c
+```
+
+The 61st request within a minute must return `429`.
+
+**Tool surface.** The MCP server ships two tools: `describe_api` and
+`vm_api_request`. `describe_api` returns the OpenAPI schema so the LLM can
+discover every endpoint the REST API exposes; `vm_api_request` then lets it
+call any of them (`GET`, `POST`, `PATCH`, `DELETE`, …). Django's RBAC is
+enforced on every outbound call, so the LLM only sees what the caller's
+Basic credentials allow. There is no separate `list_cost_lines` /
+`list_entity_options` tool — those endpoints are reachable through
+`vm_api_request` at `/api/v1/dashboards/cost-lines/` and
+`/api/v1/dashboards/entity-options/`.
+
+**Rollout order on a release.** vendor_manager's `Build and Deploy` workflow
+builds both `durczokj/vendor-manager:<tag>` and
+`durczokj/vendor-manager-mcp:<tag>` from the same commit, then applies
+`deploy/k8s/deployment.yaml` **before** `deploy/k8s/deployment-mcp.yaml`. If the
+MCP rollout hangs, check `kubectl -n <ns> logs deploy/vendor-manager-mcp
+--tail=100` for `VM_API_BASE_URL` errors or Django 5xx.

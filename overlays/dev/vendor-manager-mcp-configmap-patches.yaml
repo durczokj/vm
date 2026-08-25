@@ -1,0 +1,3 @@
+- op: replace
+  path: /data/VM_API_BASE_URL
+  value: http://vendor-manager.dev.svc.cluster.local/api/v1

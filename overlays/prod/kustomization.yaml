@@ -7,6 +7,7 @@ resources:
   - ../../apps/portfolio/base
   - ../../apps/chains/base
   - ../../apps/vendor-manager/base
+  - ../../apps/vendor-manager-mcp/base
 labels:
   - includeSelectors: false
     pairs:

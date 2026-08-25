@@ -4,6 +4,7 @@ namespace: dev
 resources:
   - ../../apps/model-api/base
   - ../../apps/vendor-manager/base
+  - ../../apps/vendor-manager-mcp/base
 labels:
   - includeSelectors: false
     pairs:
@@ -17,3 +18,7 @@ patches:
     target: { kind: ConfigMap, name: vendor-manager-config }
   - path: vendor-manager-postgres-patches.yaml
     target: { kind: StatefulSet, name: vendor-manager-db }
+  - path: vendor-manager-mcp-ingress-patches.yaml
+    target: { kind: Ingress, name: vendor-manager-mcp }
+  - path: vendor-manager-mcp-configmap-patches.yaml
+    target: { kind: ConfigMap, name: vendor-manager-mcp-config }

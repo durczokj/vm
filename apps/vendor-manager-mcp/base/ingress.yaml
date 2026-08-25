@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vendor-manager-mcp
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Namespace of the referenced middlewares must match the ingress namespace at apply time.
+    traefik.ingress.kubernetes.io/router.middlewares: prod-vendor-manager-mcp-guardrails@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [vendor-manager-mcp.durczok.ovh]
+      secretName: vendor-manager-mcp-tls
+  rules:
+    - host: vendor-manager-mcp.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vendor-manager-mcp
+                port:
+                  number: 80
