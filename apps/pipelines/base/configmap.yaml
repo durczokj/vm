@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: pipelines-env
 data:
-  DAGSTER_POSTGRES_HOSTNAME: pipelines-db
-  DAGSTER_POSTGRES_DB:       dagster
-  DAGSTER_POSTGRES_USER:     dagster
+  POSTGRES_HOSTNAME: pipelines-db
+  POSTGRES_DB:       dagster
+  POSTGRES_USER:     dagster
 
 ---
 # Empty ConfigMap referenced by K8sRunLauncher (env: DAGSTER_INSTANCE_CONFIG_MAP)
