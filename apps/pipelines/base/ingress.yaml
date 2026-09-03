@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pipelines-webserver
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [pipelines.durczok.ovh]
+      secretName: pipelines-webserver-tls
+  rules:
+    - host: pipelines.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pipelines-webserver-proxy
+                port:
+                  number: 80
+
+---
+# dufs runs with `--auth` so basic auth is enforced by the filebrowser itself.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pipelines-filebrowser
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [files.pipelines.durczok.ovh]
+      secretName: pipelines-filebrowser-tls
+  rules:
+    - host: files.pipelines.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pipelines-filebrowser
+                port:
+                  number: 5000
