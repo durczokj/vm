@@ -1,0 +1,60 @@
+# Traefik BasicAuth middleware; the `users` key in the referenced Secret must be
+# an htpasswd-formatted file (create out-of-band with `htpasswd -nb <user> <pw>`).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: pipelines-auth
+spec:
+  basicAuth:
+    secret: pipelines-basic-auth
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pipelines-webserver
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Namespace prefix is patched per overlay (dev-... in overlays/dev).
+    traefik.ingress.kubernetes.io/router.middlewares: prod-pipelines-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [pipelines.durczok.ovh]
+      secretName: pipelines-webserver-tls
+  rules:
+    - host: pipelines.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pipelines-webserver
+                port:
+                  number: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pipelines-filebrowser
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: prod-pipelines-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [files.pipelines.durczok.ovh]
+      secretName: pipelines-filebrowser-tls
+  rules:
+    - host: files.pipelines.durczok.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pipelines-filebrowser
+                port:
+                  number: 5000

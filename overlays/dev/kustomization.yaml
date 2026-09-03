@@ -5,6 +5,7 @@ resources:
   - ../../apps/model-api/base
   - ../../apps/vendor-manager/base
   - ../../apps/vendor-manager-mcp/base
+  - ../../apps/pipelines/base
 labels:
   - includeSelectors: false
     pairs:
@@ -22,3 +23,7 @@ patches:
     target: { kind: Ingress, name: vendor-manager-mcp }
   - path: vendor-manager-mcp-configmap-patches.yaml
     target: { kind: ConfigMap, name: vendor-manager-mcp-config }
+  - path: pipelines-webserver-ingress-patches.yaml
+    target: { kind: Ingress, name: pipelines-webserver }
+  - path: pipelines-filebrowser-ingress-patches.yaml
+    target: { kind: Ingress, name: pipelines-filebrowser }

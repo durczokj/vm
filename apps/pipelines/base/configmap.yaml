@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pipelines-env
+data:
+  DAGSTER_POSTGRES_HOSTNAME: pipelines-db
+  DAGSTER_POSTGRES_DB:       dagster
+  DAGSTER_POSTGRES_USER:     dagster
+
+---
+# Empty ConfigMap referenced by K8sRunLauncher (env: DAGSTER_INSTANCE_CONFIG_MAP)
+# so launched run pods can rebuild the Dagster instance ref.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dagster-instance
+data: {}

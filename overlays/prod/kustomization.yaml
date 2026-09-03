@@ -8,6 +8,7 @@ resources:
   - ../../apps/chains/base
   - ../../apps/vendor-manager/base
   - ../../apps/vendor-manager-mcp/base
+  - ../../apps/pipelines/base
 labels:
   - includeSelectors: false
     pairs:
