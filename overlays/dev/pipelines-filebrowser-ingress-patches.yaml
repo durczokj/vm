@@ -7,6 +7,3 @@
 - op: replace
   path: /spec/tls/0/secretName
   value: pipelines-filebrowser-tls-dev
-- op: replace
-  path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.middlewares
-  value: dev-pipelines-auth@kubernetescrd
